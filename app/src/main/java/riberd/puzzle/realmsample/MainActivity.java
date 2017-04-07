@@ -9,9 +9,11 @@ import android.view.View;
 import android.widget.EditText;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
+
+import io.realm.Realm;
+import io.realm.RealmQuery;
+import io.realm.RealmResults;
 
 /**
  * Created by Riberd on 2017/04/06.
@@ -20,13 +22,15 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private EditText titleEditText;
     private RecyclerViewAdapter recyclerViewAdapter;
-    private List<MemoData> memoDataList = new ArrayList<>();
+    private Realm realm;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Realm.init(this);
+        realm = Realm.getDefaultInstance();
         setupViews();
     }
 
@@ -36,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerViewAdapter = new RecyclerViewAdapter(this, memoDataList);
+        recyclerViewAdapter = new RecyclerViewAdapter(this, getListData());
         recyclerView.setAdapter(recyclerViewAdapter);
     }
 
@@ -45,14 +49,27 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View view) {
             if (titleEditText.getText().toString().isEmpty()) return;
 
-            MemoData item = new MemoData();
-            item.setTitle(titleEditText.getText().toString());
-            item.setDate(getNowDateToString());
-            memoDataList.add(item);
-
-            recyclerViewAdapter.refreshItem(memoDataList);
+            saveListData();
+            recyclerViewAdapter.refreshItem(getListData());
         }
     };
+
+    private void saveListData() {
+        realm.beginTransaction();
+        MemoObject memoObject = realm.createObject(MemoObject.class);
+        memoObject.setTitle(titleEditText.getText().toString());
+        memoObject.setDate(getNowDateToString());
+        realm.commitTransaction();
+    }
+
+    private RealmResults<MemoObject> getListData() {
+        RealmQuery<MemoObject> realmQuery = realm.where(MemoObject.class);
+        RealmResults<MemoObject> realmResults = realmQuery
+                .findAll();
+        realmResults.asObservable();
+
+        return realmResults;
+    }
 
     private String getNowDateToString() {
         final SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd/hh:mm");

@@ -1,10 +1,12 @@
 package riberd.puzzle.realmsample;
 
+import io.realm.RealmObject;
+
 /**
  * Created by Riberd on 2017/04/06.
  */
 
-public class MemoData {
+public class MemoObject extends RealmObject {
     private String title;
     private String date;
 
